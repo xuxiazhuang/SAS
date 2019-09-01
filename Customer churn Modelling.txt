@@ -1,0 +1,115 @@
+libname mydata "/home/ps140/my_content/Marketing Analytics";
+run;
+
+proc contents data=mydata.telecom2;
+run;
+
+proc freq data=mydata.telecom2;
+table retain_in;
+run;
+
+/*******Segmentation Decision **********/
+ proc freq data=mydata.telecom2;
+ table retain_in*sex_in;
+ run;
+ 
+ /********* Sampling *********/
+proc surveyselect data=mydata.telecom2 method=srs samprate=.6 out=training;
+run;
+
+/********** Validation Sample *********/
+data validation;
+merge mydata.telecom2(in=a) training(in=b);
+if a and not b;
+run;
+
+proc contents data=validation;
+run;
+
+
+proc surveyselect data=mydata.telecom2 method=srs sampsize=1000 out=validation1 seed=999;
+run;
+
+proc surveyselect data=mydata.telecom2 method=srs sampsize=1000 out=validation2 seed=9999;
+run;
+
+/*****plain vanilla model ********/
+proc logistic data=training desc;
+model retain_in= income_status marrital_status sex_in;
+run;
+
+/******Stepwise Variable Selection**********/
+proc logistic data=training outmodel=outmod desc;
+model retain_in= income_status marrital_status sex_in/ selection=stepwise;
+output out=outreg p=predicted;
+run;
+
+/****** Model Validation ******/
+proc logistic inmodel=outmod;
+score data=validation out=validation_scored;
+run;
+
+/**** C-Stat = (1 + Somer's D)/2 *****/
+proc freq data=validation_scored;
+table retain_in*P_1/ noprint measures;
+run;
+
+/**** C-Stat = (1 + Somer's D)/2 = (1+.30)/2 = .65 *****/
+
+ods graphics on;
+proc univariate data=outreg;
+var predicted;
+run;
+
+proc means data=outreg n;
+where predicted>= .5;
+run;
+
+data outreg;
+set outreg;
+if predicted >= 0.5 then retain_in_pred=1;
+else retain_in_pred=0;
+run;
+
+/******* Confusion Matrix *******/
+proc freq data=outreg;
+table retain_in_pred*retain_in;
+run;
+
+proc sort data=outreg;
+by predicted;
+run;
+
+Data outreg;
+set outreg;
+if _n_<= 5000;
+run;
+
+/**** binning ***/
+data test;
+do i=1 to 10;
+	do j=1 to 500;
+output;
+end;
+end;
+drop j;
+run;
+
+data outreg;
+merge outreg test;
+run;
+
+proc sql;
+create table summary as
+select i as bin, sum (retain_in=1) as churns
+From outreg
+group by i;
+quit;
+
+
+
+
+
+
+
+

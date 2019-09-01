@@ -1,0 +1,122 @@
+
+/**import data from Sashelp**/
+data Cars;
+set sashelp.cars;
+run;
+
+/***content of the data**/
+proc contents data=cars;
+run;
+
+
+proc contents data=cars out=cars_details;
+run;
+
+/***variable exploration with proc means**/
+proc means data=cars;
+var length;
+run;
+
+
+proc means data=cars;
+var length Weight Invoice EngineSize;
+run;
+
+proc means data =cars mean std ;
+var length;
+run;
+
+
+proc means data=cars nmiss;
+var length Weight Invoice EngineSize;
+run; 
+
+/**variable exploration with proc freq***/
+proc freq data = cars;
+table make;
+ run;
+
+
+proc freq data= cars;
+table origin* type;
+run;
+
+/**ploting variables**/;
+ods graphics on;
+proc gplot data=cars;
+plot length * weight;
+run;
+quit;
+
+
+/**variable exploration with univariate**/;
+
+proc univariate data=cars;
+var length;
+run;
+quit;
+
+ods graphics on;
+proc univariate data=cars;
+histogram length;
+run;
+quit;
+
+
+/***Proc Univariate with All option**/;
+
+proc univariate data=cars all;
+var length;
+run;
+quit;
+
+proc univariate data = cars plots;
+var length;
+run;
+
+/***correlation**/;
+
+
+proc corr data = cars out =corr_cars;
+var length Weight Invoice EngineSize;
+run ;
+quit;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

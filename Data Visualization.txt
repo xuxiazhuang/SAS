@@ -1,0 +1,36 @@
+LIBNAME mydata "/home/ps140/my_content/Marketing Analytics"; 
+filename MMM1 "/home/ps140/my_content/Marketing Analytics/MMM.xlsx"; 
+ 
+proc import datafile= MMM1 dbms=xlsx out=mydata.MMM2; 
+run;
+
+proc contents data= mydata.MMM2;
+run;
+
+/*********** Visualization *********/
+ods graphics on;
+proc gplot data=Sales;
+Plot Sales*Income;
+run;
+
+proc gplot data=Sales;
+Plot Sales*Advertising;
+run;
+
+proc gplot data=Sales;
+Plot Sales*Population;
+run;
+
+proc gplot data=Sales;
+Plot Sales*Price;
+run;
+
+proc gplot data=Sales;
+Plot Sales*CompPrice;
+run;
+
+/*******Correlation********/
+proc corr data=Sales;
+Var Sales compprice Income Advertising Population Price Age Education;
+run;
+

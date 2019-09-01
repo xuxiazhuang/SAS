@@ -1,0 +1,23 @@
+libname mydata "/home/ps140/my_content/Marketing Analytics";
+run;
+
+proc corr data=mydata.burger2 out=correl;
+var calories totalfat_g caloriesfromfat saturatedfat_g transfat_g
+cholesterol_mg carbohydrates_g fiber_g protein_g;
+run;
+
+
+proc factor data=mydata.burger2;
+var calories totalfat_g caloriesfromfat saturatedfat_g transfat_g
+cholesterol_mg carbohydrates_g fiber_g protein_g;
+run;
+
+proc factor data=mydata.burger2 method=prin scree;
+var calories totalfat_g caloriesfromfat saturatedfat_g transfat_g
+cholesterol_mg carbohydrates_g fiber_g protein_g;
+run;
+
+proc factor data=mydata.burger2 method=prin scree n=2 out=Student1; 
+var calories totalfat_g caloriesfromfat saturatedfat_g transfat_g
+cholesterol_mg carbohydrates_g fiber_g protein_g;
+run;

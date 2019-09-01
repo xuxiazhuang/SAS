@@ -1,0 +1,95 @@
+/*** Creating a dataset in SAS *****/
+data abc;
+input a b c$;
+datalines;
+1 2 a
+3 4 c
+5 6 d
+;
+run;
+
+/**** Creating a permanent library in SAS ****/
+libname mydata "/home/ps140/my_content/Marketing Analytics";
+run;
+ 
+data students1;
+set mydata.students;
+if gpa> 3.5;
+run;
+
+/*******deleting some observations ********/
+
+data students2;
+set mydata.students;
+if gpa< 3 then delete;
+
+/* Creating a new variable using if-else*/
+
+data students3;
+set mydata.students;
+if gpa>3.5 then Good_Bad=1;
+else Good_bad=0;
+run;
+
+/******* do-loop *****/
+data abc;
+do i= 1 to 10;
+output;
+end;
+run;
+
+/****** keep drop rename*****/
+
+data employee;
+input name $ Salary;
+Datalines;
+bob 2000
+ron 3000
+Nancy 5000
+freud 6500
+;
+run;
+
+data employee1 (rename=(name= emp_name Salary=emp_Salary));
+set employee;
+run;
+
+/******Merge Datasets *****/
+
+data employee;
+input id name$;
+datalines;
+1 Nancy
+2 Jon
+3 Joe
+4 Kerry
+;
+run;
+
+data Salary;
+input id salary;
+datalines;
+1 1000
+2 2000
+5 7000
+;
+run;
+
+data merged_data;
+merge employee (in=a) salary(in=b);
+by id;
+if a and b;
+run;
+
+
+
+
+
+
+
+
+
+
+
+
+

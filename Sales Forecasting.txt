@@ -1,0 +1,201 @@
+Libname mydata"/home/ps140/my_content/Marketing Analytics";
+run;
+
+proc contents data= mydata.sales2;
+run;
+
+/***** Creating dummy variable********/
+data Sales;
+set mydata.Sales2;
+if urban='Yes' then urban_in=1;
+else urban_in=0;
+run;
+
+/********* Data Exploration ****/
+proc means data=Sales;
+run;
+
+proc sort data=Sales;
+by urban_in;
+run;
+
+proc means data=Sales;
+by Urban_in;
+run;
+
+/*******Correlation********/
+proc corr data=Sales;
+run;
+
+/*********** Visualization *********/
+ods graphics on;
+proc gplot data=Sales;
+Plot Sales*Income;
+run;
+
+proc gplot data=Sales;
+Plot Sales*Advertising;
+run;
+
+proc gplot data=Sales;
+Plot Sales*Population;
+run;
+
+/*********** Train & Tet Data ********/
+proc surveyselect data=sales method=srs samprate=.7 outall out=SelectSales;
+run;
+
+Data Sales_train;
+Set SelectSales;
+if Selected=1;
+run;
+
+Data Sales_Test;
+Set SelectSales;
+if Selected=0;
+run;
+
+/********** Model Development **********/
+
+/****** Model 1 **********/
+proc reg data=sales_train outest=outstat1;
+model Sales= compprice Income Advertising Population Price Age Urban_in Education;
+run;
+
+Data Sales_train;
+Set Sales_train;
+Education_Sq=Education*Education;
+Population_Sq=Population*Population;
+run;
+
+/*******Model 2***********/
+proc reg data=sales_train outest=outstat2;
+model Sales= compprice Income Advertising Population Price Age Urban_in Education Education_Sq Population_Sq;
+run;
+
+Data Sales_train;
+Set Sales_train;
+Education_Sq=Education*Education;
+Population_Sq=Population*Population;
+Education_log= Log(Education);
+Education_Cu=Education*Education*Education;
+CompPrice_Sq= CompPrice*CompPrice;
+Income_Sq=Income*Income;
+Advertising_Sq=Advertising*Advertising;
+Price_Sq=Price*Price;
+Age_Sq=Age*Age;
+run;
+
+/***********Model 3***********/
+proc reg data=sales_train outest=outstat3;
+model Sales= compprice Income Advertising Population Price Age Urban_in Education Education_Sq Population_Sq
+Education_log Education_Cu CompPrice_Sq Income_Sq Advertising_Sq Price_Sq Age_Sq;
+run;
+
+/********** Model 4**********/
+proc reg data=sales_train outest=outstat4;
+model Sales= compprice Income Advertising Population Price Age Urban_in Education Education_Sq Population_Sq
+Education_log Education_Cu CompPrice_Sq Income_Sq Advertising_Sq Price_Sq Age_Sq/Selection = Stepwise;
+run;
+
+/*********** Model Selection**********/
+Data Sales_Test;
+Set Sales_Test;
+Education_Sq=Education*Education;
+Population_Sq=Population*Population;
+Education_log= Log(Education);
+Education_Cu=Education*Education*Education;
+CompPrice_Sq= CompPrice*CompPrice;
+Income_Sq=Income*Income;
+Advertising_Sq=Advertising*Advertising;
+Price_Sq=Price*Price;
+Age_Sq=Age*Age;
+run;
+
+/******* Score using Model*******/
+/********Scoring Model 1********/
+
+proc score data=Sales_Test score=outstat1 type=parms predict out=Pred;
+var compprice Income Advertising Population Price Age Urban_in Education;
+run;
+
+data MSE1;
+Set Pred;
+MSE = ((Sales-Model1)**2)/120;
+run;
+
+Proc means data=MSE1 sum;
+var MSE;
+run;
+
+/********Scoring Model 2********/
+
+proc score data=Sales_Test score=outstat2 type=parms predict out=Pred;
+var compprice Income Advertising Population Price Age Urban_in Education Education_Sq Population_Sq;
+run;
+
+data MSE1;
+Set Pred;
+MSE = ((Sales-Model1)**2)/120;
+run;
+
+Proc means data=MSE1 sum;
+var MSE;
+run;
+
+/*****Scoring Model 3******/
+
+proc score data=Sales_Test score=outstat3 type=parms predict out=Pred;
+var compprice Income Advertising Population Price Age Urban_in Education Education_Sq Population_Sq
+Education_log Education_Cu CompPrice_Sq Income_Sq Advertising_Sq Price_Sq Age_Sq;
+run;
+
+data MSE1;
+Set Pred;
+MSE = ((Sales-Model1)**2)/120;
+run;
+
+Proc means data=MSE1 sum;
+var MSE;
+run;
+
+/*********Scoring Model 4**********/
+
+proc score data=Sales_Test score=outstat4 type=parms predict out=Pred;
+var CompPrice_Sq Advertising Age_Sq Income_Sq Price;
+run;
+
+data MSE1;
+Set Pred;
+MSE = ((Sales-Model1)**2)/120;
+run;
+
+Proc means data=MSE1 sum;
+var MSE;
+run;
+
+/*********Deployment*************/
+
+Data Sales_Forecast;
+Input Price CompPrice Advertising Age Income Education;
+datalines;
+20 25 80 15 25 14
+21 25 120 12 24 15
+;
+run;
+
+Data Sales_Forecast;
+Set Sales_Forecast;
+CompPrice_Sq=CompPrice*CompPrice;
+Age_Sq=Age*Age;
+Income_Sq=Income*Income;
+Advertising=Advertising;
+Price=Price;
+run;
+
+proc score data=Sales_Forecast score=outstat4 type=parms predict out=Pred;
+var CompPrice_Sq Advertising Age_Sq Income_Sq Price;
+run;
+
+Proc print data=pred;
+run;

@@ -1,0 +1,125 @@
+LIBNAME mydata "/home/ps140/my_content/Marketing Analytics"; 
+filename MMM1 "/home/ps140/my_content/Marketing Analytics/MMM.xlsx"; 
+ 
+proc import datafile= MMM1 dbms=xlsx out=mydata.MMM2; 
+run;
+
+proc contents data= mydata.MMM2;
+run;
+
+/*********** Visualization *********/
+ods graphics on;
+proc gplot data=Sales;
+Plot Sales*Income;
+run;
+
+proc gplot data=Sales;
+Plot Sales*Advertising;
+run;
+
+proc gplot data=Sales;
+Plot Sales*Population;
+run;
+
+proc gplot data=Sales;
+Plot Sales*Price;
+run;
+
+proc gplot data=Sales;
+Plot Sales*CompPrice;
+run;
+
+/*******Correlation********/
+proc corr data=Sales;
+Var Sales compprice Income Advertising Population Price Age Education;
+run;
+
+/******* Model Building *********/
+proc reg data=Sales;
+model Sales= compprice Income Advertising Population Price Age Education/ Influence;
+run;
+
+proc reg data=sales;
+model Sales= compprice Income Advertising Population Price Age Education/ Vif;
+run;
+
+/***** Creating dummy variable********/
+data Sales;
+set mydata.Sales2;
+if urban='Yes' then urban_in=1;
+else urban_in=0;
+run;
+
+/********* Data Exploration ****/
+proc means data=Sales;
+run;
+
+proc sort data=Sales;
+by urban_in;
+run;
+
+proc means data=Sales;
+by Urban_in;
+run;
+
+/*********Interation effect & Marginal Effect*********/
+
+data Sales;
+set mydata.Sales2;
+if urban='Yes' then urban_in=1;
+else urban_in=0;
+Age_int=Age*Urban_in;
+Education_int=Education*Urban_in;
+Income_int=Income*Urban_in;
+run;
+
+proc reg data=sales;
+model Sales= compprice Income Advertising Population Price Age Education 
+Age_int Education_int Income_int/Selection=Stepwise;
+run;
+
+/********* Standardized Estimates **********/
+
+Proc reg data=Sales;
+model Sales= compprice Income Advertising Population Price Age 
+Education Urban_in/ Selection=Stepwise stb;
+run;
+
+/********** Relative iportance of Variables*********/
+
+Proc contents data=mydata.mmm2;
+run;
+
+Proc reg data=mydata.mmm2;
+model Sales= compprice Income Advertising
+TV Social Population Price Age 
+Education/ Selection=Stepwise stb;
+run;
+
+/*************Random Effect through Mixed Models*********/
+
+data places;
+do places=1 to 400;
+output;
+end;
+run;
+
+Data Sales_MMM;
+merge places mydata.Sales2;
+run;
+
+proc mixed data=sales_mmm;
+class places;
+proc reg data=sales_mmm;
+model Sales= compprice Income Advertising Price Age;
+Random places;
+run;
+
+/********Model Validation *********/
+
+proc surveyselect data= Sales  method=srs samprate=.7 outall out=SelectSales;
+run;
+
+Proc reg data=SelectSales;
+model Sales= compprice Income Advertising Price Age;
+run;

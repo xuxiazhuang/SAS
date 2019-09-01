@@ -1,0 +1,53 @@
+LIBNAME mydata "/home/ps140/my_content/Marketing Analytics"; 
+filename iris1 "/home/ps140/my_content/Marketing Analytics/Iris.xls"; 
+ 
+proc import datafile= iris1 dbms=xls out=mydata.iris2; 
+run;
+
+/*** Sampling to get training dataset ***/
+proc surveyselect data=mydata.iris2 method=srs samprate=.6 out=iris_train;
+run;
+
+proc sort data= mydata.iris2;
+by i;
+run;
+
+proc sort data=iris_train;
+by i;
+run;
+
+/*** creation of validation Dataset****/
+data validate; 
+merge iris_train (in=a) mydata.iris2 (in=b);
+by i;
+if not a and b;
+run;
+
+/*** Discrminant Analysis***/
+proc discrim data=iris_train
+distance anova manova crosslisterr;
+class irisSpecies;
+var SepalLength SepalWidth PetalLength PetalWidth;
+run;
+
+/*** Validating DA ***/
+proc discrim data=iris_train
+distance anova manova crosslisterr testdata= validate;
+class irisSpecies;
+var SepalLength SepalWidth PetalLength PetalWidth;
+run;
+
+proc discrim data=iris_train
+distance anova manova crosslisterr testdata= validate testout=Out_valid;
+class irisSpecies;
+var SepalLength SepalWidth PetalLength PetalWidth;
+run;
+
+proc print data=Out_valid;
+run;
+
+/********* Canonical Discriminant Analysis **********/
+proc candisc data= mydata.iris2 out=outcan distance anova;
+class irisSpecies;
+var SepalLength SepalWidth PetalLength PetalWidth;
+run;
